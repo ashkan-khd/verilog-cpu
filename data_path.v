@@ -1,4 +1,17 @@
 module DataPath (
+    clk,
+    data_in,
+    cache_a_b_not, 
+    is_data_indirect, 
+    ALUOP, 
+    pop_operand,
+    push_result, 
+    write_mem_result,
+    write_address,
+    data_out,
+    datapath_alu_out, 
+    datapath_stack_out,
+    flags
 );
 parameter WORD_RANGE = 8;
 parameter MEMORY_WORD_COUNT = 256;
@@ -11,28 +24,36 @@ input push_result, write_mem_result;
 input [WORD_RANGE-1:0] write_address;
 input clk;
 output [WORD_RANGE-1:0] data_out;
-
-
+output [WORD_RANGE-1:0] datapath_alu_out, datapath_stack_out;
 output [FLAGS_COUNT-1:0] flags;
 
-assign data_out = pop_operand ? stack_out : alu_out;
 
+// alu segment
+reg [WORD_RANGE-1:0] cache_a, cache_b;
+reg alu_cin;
+wire [WORD_RANGE-1:0] alu_out;
 
-always @(*) begin
-    if (cache_a_b_not) begin
-        if (is_data_indirect) begin
-            cache_a = data_memory_bus;
-        end else begin
-            cache_a = data_in;
-        end
-    end else begin
-        if (is_data_indirect) begin
-            cache_b = data_memory_bus;
-        end else begin
-            cache_b = data_in;
-        end
-    end
+wire cout, zero;
+ALU alu(
+    cache_a,
+    cache_b,
+    alu_cin,
+    ALUOP,
+    alu_out,
+    cout,
+    zero
+);
+defparam alu.TERMINAL_RANGE = WORD_RANGE;
+
+assign flags[0] = zero;
+assign flags[1] = alu_out[WORD_RANGE-1];
+
+initial begin
+    alu_cin = 0;
+    cache_a = {WORD_RANGE{1'b0}};
+    cache_b = {WORD_RANGE{1'b0}};
 end
+
 
 // stack segment
 reg reset_stack;
@@ -52,33 +73,8 @@ initial begin
 end
 
 
-// alu segment
-reg [WORD_RANGE-1:0] cache_a, cache_b;
-reg alu_cin;
-wire [WORD_RANGE-1:0] alu_out;
-wire cout, zero;
-ALU alu(
-    cache_a,
-    cache_b,
-    alu_cin,
-    ALUOP,
-    alu_out,
-    cout,
-    zero
-);
-alu.TERMINAL_RANGE = WORD_RANGE;
-
-assign flags[0] = zero;
-assign flags[1] = alu_out[WORD_RANGE-1];
-
-initial begin
-    alu_cin = 0;
-    cache_a = {WORD_RANGE{1'b0}};
-    cache_b = {WORD_RANGE{1'b0}};
-end
-
 // data memory segment
-wire [WORD_RANGE-1] data_memory_address;
+wire [WORD_RANGE-1:0] data_memory_address;
 MUX mux(
     write_mem_result,
     write_address,
@@ -87,7 +83,7 @@ MUX mux(
 );
 defparam mux.WORD_RANGE = WORD_RANGE;
 
-wire [WORD_RANGE-1] data_memory_bus;
+wire [WORD_RANGE-1:0] data_memory_bus;
 Memory data_memory(
     data_memory_address,
     write_mem_result, 
@@ -104,5 +100,28 @@ TriStateBuffer tri_state_buffer(
 );
 defparam tri_state_buffer.RANGE = WORD_RANGE;
 
+
+// input output assignments
+assign datapath_alu_out = alu_out; 
+assign datapath_stack_out = stack_out;
+
+assign data_out = pop_operand ? stack_out : alu_out;
+
+
+always @(*) begin
+    if (cache_a_b_not) begin
+        if (is_data_indirect) begin
+            cache_a = data_memory_bus;
+        end else begin
+            cache_a = data_in;
+        end
+    end else begin
+        if (is_data_indirect) begin
+            cache_b = data_memory_bus;
+        end else begin
+            cache_b = data_in;
+        end
+    end
+end
 
 endmodule
