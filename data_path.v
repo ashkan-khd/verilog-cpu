@@ -8,7 +8,6 @@ module DataPath (
     push_result, 
     write_mem_result,
     write_address,
-    data_out,
     datapath_alu_out, 
     datapath_stack_out,
     flags
@@ -23,7 +22,6 @@ input cache_a_b_not, is_data_indirect, ALUOP, pop_operand;
 input push_result, write_mem_result;
 input [WORD_RANGE-1:0] write_address;
 input clk;
-output [WORD_RANGE-1:0] data_out;
 output [WORD_RANGE-1:0] datapath_alu_out, datapath_stack_out;
 output [FLAGS_COUNT-1:0] flags;
 
@@ -104,8 +102,6 @@ defparam tri_state_buffer.RANGE = WORD_RANGE;
 // input output assignments
 assign datapath_alu_out = alu_out; 
 assign datapath_stack_out = stack_out;
-
-assign data_out = pop_operand ? stack_out : alu_out;
 
 
 always @(*) begin

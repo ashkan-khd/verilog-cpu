@@ -11,7 +11,7 @@ module ControlUnit (
     push_result, 
     write_mem_result,
     datapath_in,
-    data_memory_write_addr
+    data_memory_write_addr,
 );
 
 parameter DATA_RANGE = 8;
@@ -30,9 +30,10 @@ input [FLAGS_COUNT-1:0] flags;
 output reg cache_a_b_not, is_data_indirect, ALUOP, pop_operand, push_result, write_mem_result;
 output reg [DATA_RANGE-1:0] datapath_in;
 output reg [DATA_RANGE-1:0] data_memory_write_addr;
+output reg [3:1] states;
 
 reg [DATA_RANGE-1:0] PC;
-reg [INST_RANGE-1:0] IR;
+wire [INST_RANGE-1:0] IR;
 
 
 Memory instruction_memory(
@@ -46,7 +47,6 @@ defparam instruction_memory.M = INST_RANGE;
 
 wire [OP_CODE_RANGE-1:0] op_code;
 assign op_code = IR[INST_RANGE-1:INST_RANGE-OP_CODE_RANGE];
-reg [3:1] states;
 
 initial begin
     PC = init_PC;
@@ -55,12 +55,6 @@ end
 
 always @(posedge clk) begin
     if (states == START) begin
-		/* cache_a_b_not = 0;
-		is_data_indirect = 0;
-		ALUOP = 0;
-		pop_operand = 0;
-		push_result = 0;
-		write_mem_result = 0; */ 
 		push_result = 0;
 		write_mem_result = 0;
 		

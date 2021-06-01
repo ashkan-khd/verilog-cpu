@@ -1,4 +1,4 @@
-module stack(Clk, RstN, Enable, Data_in, Push, Pop, Data_out, Full, Empty);
+module Stack(Clk, RstN, Enable, Data_in, Push, Pop, Data_out, Full, Empty);
 	parameter WORD_RANGE = 8;
 	parameter WORD_COUNT = 64;
 	input Clk, RstN, Enable, Push, Pop;
